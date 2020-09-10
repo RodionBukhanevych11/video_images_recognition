@@ -25,37 +25,43 @@ class Video_recorder():
 
 
 class Video_processer():
-    def __init__(self, video_path, play_speed):
+    def __init__(self, video_path, play_speed,save_path):
         self.video_path = video_path
         self.play_speed = play_speed
+        self.save_path=save_path
         self.capture = None
 
     def play(self):
         self.capture = cv2.VideoCapture(self.video_path)
+        vid_cod = cv2.VideoWriter_fourcc(*"XVID")
+        output = cv2.VideoWriter(self.save_path, vid_cod, 20.0, (640, 480))
         if not self.capture.isOpened():
             print("Error opening video  file")
         
         while self.capture.isOpened():
             ret, frame = self.capture.read()
             key = cv2.waitKey(self.play_speed)
+
             if ret:
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
 
                 haar_cascade_face = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
                 haar_cascade_eyes=cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
-                faces_rects = haar_cascade_face.detectMultiScale(frame, scaleFactor = 1.2, minNeighbors = 8)
+                faces_rects = haar_cascade_face.detectMultiScale(frame, scaleFactor = 1.2, minNeighbors = 3)
                 for (x,y,w,h) in faces_rects:
                     cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 0, 255), 3)
-                    eyes_rects = haar_cascade_eyes.detectMultiScale(frame, scaleFactor=1.2, minNeighbors=8)
+                    eyes_rects = haar_cascade_eyes.detectMultiScale(frame, scaleFactor=1.2, minNeighbors=10)
                     for (x1, y1, w1, h1) in eyes_rects:
                         cv2.rectangle(frame, (x1, y1), (x1 + w1, y1 + h1), (255, 0), 2)
                         cv2.line(frame, (x1, y1), (x1 + w1, y1 + h1), (255, 0, 255), 2)
                         cv2.line(frame, (x1, y1+h1), (x1 + w1, y1), (255, 0, 255), 2)
 
                 cv2.imshow('result', frame)
+                output.write(frame)
                 if cv2.waitKey(25) & 0xFF == ord('x'):
                     self.capture.release()
+                    output.release()
                     break
             else:
                 break
@@ -64,6 +70,6 @@ class Video_processer():
 
 video_recorder = Video_recorder('video.avi')    
 video_recorder.record()
-video_processer = Video_processer('video.avi', 40)
+video_processer = Video_processer('video.avi', 24, 'video_process.avi')
 video_processer.play()
 
